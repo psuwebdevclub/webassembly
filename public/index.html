@@ -3,10 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0;url=fractal-renderer.html">
-    <title>Fractal Renderer WebAssembly Demo</title>
+    <title>WebAssembly Demos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        .demo-card {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .demo-card:hover {
+            transform: translateY(-5px);
+        }
+        .demo-title {
+            font-size: 24px;
+            margin-top: 0;
+            color: #2962FF;
+        }
+        .demo-description {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .demo-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #2962FF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .demo-link:hover {
+            background-color: #0039CB;
+        }
+        .performance-note {
+            font-style: italic;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
-    <p>If you are not redirected, <a href="fractal-renderer.html">click here to view the Fractal Renderer demo</a>.</p>
+    <div class="container">
+        <h1>WebAssembly Performance Demos</h1>
+        
+        <div class="demo-card">
+            <h2 class="demo-title">N-Body Simulation</h2>
+            <p class="demo-description">
+                A physics simulation that demonstrates WebAssembly's performance advantages for computationally 
+                intensive tasks. The demo simulates gravitational interactions between multiple bodies in a 2D space, 
+                with O(n²) complexity making it perfect for showcasing WebAssembly's speed.
+            </p>
+            <p class="performance-note">
+                WebAssembly can be significantly faster (often 2-10x) than JavaScript for this simulation,
+                especially when increasing the number of bodies.
+            </p>
+            <a href="n-body-simulation.html" class="demo-link">Open N-Body Demo</a>
+        </div>
+        
+        <div class="demo-card">
+            <h2 class="demo-title">Mandelbrot Fractal Renderer</h2>
+            <p class="demo-description">
+                A fractal renderer that calculates and displays the Mandelbrot set. This demo showcases
+                WebAssembly's ability to handle complex mathematical calculations faster than JavaScript.
+            </p>
+            <p class="performance-note">
+                The Mandelbrot calculation benefits from WebAssembly's more efficient handling of floating-point math operations.
+            </p>
+            <a href="fractal-renderer.html" class="demo-link">Open Fractal Demo</a>
+        </div>
+    </div>
 </body>
 </html> 

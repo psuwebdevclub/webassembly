@@ -2,8 +2,8 @@
 #include <math.h>
 #include <emscripten.h>
 
-#define MAX_BODIES 5000
-#define G 6.67408e-11   // Gravitational constant
+#define MAX_BODIES 10000   // Increased from 5000 to allow more bodies
+#define G 0.1   // Gravitational constant - increased for visible effect
 #define SOFTENING 1e-9  // Prevents division by zero
 
 typedef struct {
@@ -35,9 +35,9 @@ void init(int canvasWidth, int canvasHeight, int bodyCount) {
         bodies[i].x = rand() % width;
         bodies[i].y = rand() % height;
         
-        // Velocity: small random values
-        bodies[i].vx = (rand() % 20 - 10) * 0.1;
-        bodies[i].vy = (rand() % 20 - 10) * 0.1;
+        // Velocity: larger random values for more visible movement
+        bodies[i].vx = (rand() % 100 - 50) * 0.5;
+        bodies[i].vy = (rand() % 100 - 50) * 0.5;
         
         // Mass: random between 1 and 100
         bodies[i].mass = 1.0 + (rand() % 100);

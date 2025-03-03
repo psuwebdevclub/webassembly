@@ -1,12 +1,15 @@
 #!/bin/bash
 
-echo "Building Fractal Renderer WebAssembly module..."
+echo "Building WebAssembly demos..."
 
-# Build fractal renderer
-cd src/fractal-renderer/c
+# Ensure we have the right permissions
+chmod +x "$0"
+
+# Build the N-body simulation
+echo "Building N-Body Simulation..."
+cd src/n-body-simulation/c
 ./build.sh
 cd ../../..
 
-echo "WebAssembly module built successfully!"
-echo "Run a local server to view the demo."
-echo "Example: python3 -m http.server" 
+echo "All demos built successfully!"
+echo "To run the demos, start a local server (e.g., python3 -m http.server) and navigate to index.html" 

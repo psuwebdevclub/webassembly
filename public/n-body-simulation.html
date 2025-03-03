@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Body Simulation - WebAssembly vs JavaScript Performance Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        .canvas-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .simulation {
+            flex: 1;
+            margin: 0 10px;
+            text-align: center;
+        }
+        canvas {
+            background-color: black;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            margin-right: 20px;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 200px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:active {
+            background-color: #3e8e41;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .stat-box {
+            flex: 1;
+            padding: 15px;
+            background-color: #f8f8f8;
+            margin: 0 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .fps {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .wasm-color {
+            color: #3949AB;
+        }
+        .js-color {
+            color: #FFD600;
+        }
+        .speedup {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+        }
+        .simulation-speedup {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #1565C0;
+        }
+        .comparison-bars {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .bar-container {
+            height: 30px;
+            margin: 8px 0;
+            border-radius: 4px;
+            background-color: #e0e0e0;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-label {
+            position: absolute;
+            left: 10px;
+            top: 5px;
+            color: #333;
+            z-index: 1;
+            font-weight: bold;
+        }
+        .bar {
+            height: 100%;
+            transition: width 0.5s;
+        }
+        .wasm-bar {
+            background-color: #3949AB;
+        }
+        .js-bar {
+            background-color: #FDD835;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>N-Body Simulation</h1>
+        <p class="subtitle">WebAssembly vs JavaScript Performance Comparison</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="bodyCount">Number of Bodies: <span id="bodyCountValue">500</span></label>
+                <input type="range" id="bodyCount" min="100" max="5000" value="500" step="100">
+            </div>
+            
+            <div class="control-group">
+                <label for="timeStep">Time Step: <span id="timeStepValue">0.008</span></label>
+                <input type="range" id="timeStep" min="0.001" max="0.02" value="0.008" step="0.001">
+            </div>
+            
+            <button id="resetBtn">Reset Simulation</button>
+        </div>
+        
+        <div class="canvas-container">
+            <div class="simulation">
+                <h2 class="wasm-color">WebAssembly</h2>
+                <canvas id="wasmCanvas" width="600" height="400"></canvas>
+            </div>
+            
+            <div class="simulation">
+                <h2 class="js-color">JavaScript</h2>
+                <canvas id="jsCanvas" width="600" height="400"></canvas>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <h3 class="wasm-color">WebAssembly Performance</h3>
+                <div class="fps" id="wasmFPS">0 FPS</div>
+                <div>Simulation Time: <span id="wasmSimTime">0</span> ms</div>
+                <div>Render Time: <span id="wasmRenderTime">0</span> ms</div>
+            </div>
+            
+            <div class="stat-box">
+                <h3 class="js-color">JavaScript Performance</h3>
+                <div class="fps" id="jsFPS">0 FPS</div>
+                <div>Simulation Time: <span id="jsSimTime">0</span> ms</div>
+                <div>Render Time: <span id="jsRenderTime">0</span> ms</div>
+            </div>
+        </div>
+        
+        <div class="stat-box" style="margin-top: 20px;">
+            <h3>Performance Comparison</h3>
+            <div class="speedup" id="speedupRatio">WebAssembly is 1.0x faster than JavaScript</div>
+            <div class="simulation-speedup" id="simSpeedupRatio">
+                Simulation Calculation: WebAssembly is 1.0x faster than JavaScript
+            </div>
+            
+            <div class="comparison-bars">
+                <h4>Simulation Time Comparison (ms, lower is better)</h4>
+                <div class="bar-container">
+                    <span class="bar-label wasm-color">WebAssembly: <span id="wasmBarValue">0</span>ms</span>
+                    <div id="wasmBar" class="bar wasm-bar" style="width: 10%;"></div>
+                </div>
+                <div class="bar-container">
+                    <span class="bar-label js-color">JavaScript: <span id="jsBarValue">0</span>ms</span>
+                    <div id="jsBar" class="bar js-bar" style="width: 10%;"></div>
+                </div>
+            </div>
+            
+            <p>
+                This demo simulates an N-body gravitational system where each body exerts gravitational 
+                force on every other body. The computational complexity is O(n²), making it an excellent 
+                showcase for WebAssembly's performance benefits with floating-point math.
+            </p>
+        </div>
+    </div>
+
+    <script src="n_body_simulation.js"></script>
+    <script src="../src/n-body-simulation/js/n_body_simulation.js"></script>
+    <script>
+        // Canvas elements
+        const wasmCanvas = document.getElementById('wasmCanvas');
+        const jsCanvas = document.getElementById('jsCanvas');
+        const wasmCtx = wasmCanvas.getContext('2d');
+        const jsCtx = jsCanvas.getContext('2d');
+        
+        // UI elements
+        const bodyCountSlider = document.getElementById('bodyCount');
+        const bodyCountValue = document.getElementById('bodyCountValue');
+        const timeStepSlider = document.getElementById('timeStep');
+        const timeStepValue = document.getElementById('timeStepValue');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // Performance metrics
+        const wasmFPS = document.getElementById('wasmFPS');
+        const jsFPS = document.getElementById('jsFPS');
+        const wasmSimTime = document.getElementById('wasmSimTime');
+        const jsSimTime = document.getElementById('jsSimTime');
+        const wasmRenderTime = document.getElementById('wasmRenderTime');
+        const jsRenderTime = document.getElementById('jsRenderTime');
+        const speedupRatio = document.getElementById('speedupRatio');
+        const simSpeedupRatio = document.getElementById('simSpeedupRatio');
+        
+        // Comparison bars
+        const wasmBar = document.getElementById('wasmBar');
+        const jsBar = document.getElementById('jsBar');
+        const wasmBarValue = document.getElementById('wasmBarValue');
+        const jsBarValue = document.getElementById('jsBarValue');
+        
+        // Simulation variables
+        let jsSimulation = new NBodySimulation();
+        let wasmModule = null;
+        let wasmMemoryBuffer = null;
+        
+        let bodyCount = parseInt(bodyCountSlider.value);
+        let timeStep = parseFloat(timeStepSlider.value);
+        
+        // Performance tracking
+        let wasmFrameCount = 0;
+        let jsFrameCount = 0;
+        let wasmLastTime = 0;
+        let jsLastTime = 0;
+        let wasmSimLastTime = 0;
+        let jsSimLastTime = 0;
+        
+        // Initialize simulations
+        function initSimulations() {
+            // Initialize JavaScript simulation
+            jsSimulation.init(jsCanvas.width, jsCanvas.height, bodyCount);
+            jsSimulation.setTimeStep(timeStep);
+            
+            // Initialize WebAssembly simulation if available
+            if (wasmModule) {
+                try {
+                    wasmModule.ccall(
+                        'init',
+                        null,
+                        ['number', 'number', 'number'],
+                        [wasmCanvas.width, wasmCanvas.height, bodyCount]
+                    );
+                    wasmModule.ccall('setTimeStep', null, ['number'], [timeStep]);
+                } catch (e) {
+                    console.error('Failed to initialize WebAssembly simulation:', e);
+                }
+            }
+        }
+        
+        // Draw a single body
+        function drawBody(ctx, x, y, radius, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            
+            // Extract RGBA from color integer
+            const r = (color >> 24) & 0xFF;
+            const g = (color >> 16) & 0xFF;
+            const b = (color >> 8) & 0xFF;
+            const a = (color & 0xFF) / 255;
+            
+            ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+            ctx.fill();
+        }
+        
+        // Render the JavaScript simulation
+        function renderJsSimulation() {
+            const startTime = performance.now();
+            
+            // Update positions
+            jsSimLastTime = performance.now();
+            jsSimulation.updatePositions();
+            jsSimTime.textContent = (performance.now() - jsSimLastTime).toFixed(2);
+            
+            // Clear canvas
+            jsCtx.clearRect(0, 0, jsCanvas.width, jsCanvas.height);
+            
+            // Get data and render
+            const jsRenderStartTime = performance.now();
+            const data = jsSimulation.getSimulationData();
+            
+            for (let i = 0; i < bodyCount; i++) {
+                const base = i * 4;
+                drawBody(
+                    jsCtx,
+                    data[base + 0],
+                    data[base + 1],
+                    data[base + 2],
+                    data[base + 3]
+                );
+            }
+            
+            jsRenderTime.textContent = (performance.now() - jsRenderStartTime).toFixed(2);
+            
+            // Calculate FPS
+            jsFrameCount++;
+            const now = performance.now();
+            const elapsed = now - jsLastTime;
+            
+            if (elapsed >= 1000) {
+                jsFPS.textContent = Math.round(jsFrameCount * 1000 / elapsed) + ' FPS';
+                jsFrameCount = 0;
+                jsLastTime = now;
+            }
+            
+            // Continue animation
+            requestAnimationFrame(renderJsSimulation);
+        }
+        
+        // Render the WebAssembly simulation
+        function renderWasmSimulation() {
+            if (!wasmModule) return;
+            
+            const startTime = performance.now();
+            
+            try {
+                // Update positions
+                wasmSimLastTime = performance.now();
+                wasmModule.ccall('updatePositions', null, [], []);
+                wasmSimTime.textContent = (performance.now() - wasmSimLastTime).toFixed(2);
+                
+                // Clear canvas
+                wasmCtx.clearRect(0, 0, wasmCanvas.width, wasmCanvas.height);
+                
+                // Get data pointer and render
+                const wasmRenderStartTime = performance.now();
+                const dataPtr = wasmModule.ccall('getSimulationData', 'number', [], []);
+                
+                if (dataPtr === 0) {
+                    console.error('Invalid data pointer from WebAssembly');
+                    return;
+                }
+                
+                for (let i = 0; i < bodyCount; i++) {
+                    const base = i * 4;
+                    const x = wasmModule.HEAPF64[(dataPtr / 8) + base + 0];
+                    const y = wasmModule.HEAPF64[(dataPtr / 8) + base + 1];
+                    const radius = wasmModule.HEAPF64[(dataPtr / 8) + base + 2];
+                    const color = wasmModule.HEAPF64[(dataPtr / 8) + base + 3];
+                    
+                    drawBody(wasmCtx, x, y, radius, color);
+                }
+                
+                wasmRenderTime.textContent = (performance.now() - wasmRenderStartTime).toFixed(2);
+                
+                // Calculate FPS
+                wasmFrameCount++;
+                const now = performance.now();
+                const elapsed = now - wasmLastTime;
+                
+                if (elapsed >= 1000) {
+                    const wasmFpsValue = Math.round(wasmFrameCount * 1000 / elapsed);
+                    wasmFPS.textContent = wasmFpsValue + ' FPS';
+                    
+                    // Calculate speedup ratio
+                    const jsFpsText = jsFPS.textContent;
+                    const jsFpsValue = parseInt(jsFpsText.split(' ')[0]);
+                    
+                    if (jsFpsValue > 0) {
+                        const ratio = wasmFpsValue / jsFpsValue;
+                        speedupRatio.textContent = `WebAssembly is ${ratio.toFixed(1)}x faster than JavaScript`;
+                        
+                        // Calculate simulation time speedup
+                        const jsSimTimeValue = parseFloat(jsSimTime.textContent);
+                        const wasmSimTimeValue = parseFloat(wasmSimTime.textContent);
+                        
+                        if (jsSimTimeValue > 0 && wasmSimTimeValue > 0) {
+                            const simRatio = jsSimTimeValue / wasmSimTimeValue;
+                            simSpeedupRatio.textContent = `Simulation Calculation: WebAssembly is ${simRatio.toFixed(1)}x faster than JavaScript`;
+                            
+                            // Update comparison bars
+                            wasmBarValue.textContent = wasmSimTimeValue.toFixed(2);
+                            jsBarValue.textContent = jsSimTimeValue.toFixed(2);
+                            
+                            // Calculate bar widths - normalize based on max time
+                            const maxTime = Math.max(jsSimTimeValue, wasmSimTimeValue);
+                            const minWidth = 5; // Minimum width percentage to make bars visible
+                            
+                            // Make sure bars are scaled between minWidth% and 90%
+                            const wasmWidth = minWidth + (85 * (wasmSimTimeValue / maxTime));
+                            const jsWidth = minWidth + (85 * (jsSimTimeValue / maxTime));
+                            
+                            wasmBar.style.width = `${wasmWidth}%`;
+                            jsBar.style.width = `${jsWidth}%`;
+                        }
+                    }
+                    
+                    wasmFrameCount = 0;
+                    wasmLastTime = now;
+                }
+            } catch (e) {
+                console.error('Error in WebAssembly rendering:', e);
+            }
+            
+            // Continue animation
+            requestAnimationFrame(renderWasmSimulation);
+        }
+        
+        // Event listeners
+        bodyCountSlider.addEventListener('input', () => {
+            bodyCount = parseInt(bodyCountSlider.value);
+            bodyCountValue.textContent = bodyCount;
+        });
+        
+        timeStepSlider.addEventListener('input', () => {
+            timeStep = parseFloat(timeStepSlider.value);
+            timeStepValue.textContent = timeStep.toFixed(3);
+            
+            // Update time step in simulations
+            jsSimulation.setTimeStep(timeStep);
+            if (wasmModule) {
+                try {
+                    wasmModule.ccall('setTimeStep', null, ['number'], [timeStep]);
+                } catch (e) {
+                    console.error('Error setting WebAssembly time step:', e);
+                }
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            initSimulations();
+        });
+        
+        // Initialize and start simulations
+        function start() {
+            // Initialize JavaScript simulation immediately
+            initSimulations();
+            renderJsSimulation();
+            
+            // If WebAssembly module is not yet loaded, wait for it
+            if (!wasmModule) {
+                const waitForWasm = setInterval(() => {
+                    if (typeof Module !== 'undefined' && Module.ccall) {
+                        clearInterval(waitForWasm);
+                        wasmModule = Module;
+                        initSimulations();
+                        renderWasmSimulation();
+                    }
+                }, 100);
+            } else {
+                renderWasmSimulation();
+            }
+        }
+        
+        // Start the demo
+        start();
+    </script>
+</body>
+</html> 
