@@ -202,7 +202,6 @@
         
         <div class="stat-box" style="margin-top: 20px;">
             <h3>Performance Comparison</h3>
-            <div class="speedup" id="speedupRatio">WebAssembly is 1.0x faster than JavaScript</div>
             <div class="simulation-speedup" id="simSpeedupRatio">
                 Simulation Calculation: WebAssembly is 1.0x faster than JavaScript
             </div>
@@ -407,7 +406,6 @@
                     
                     if (jsFpsValue > 0) {
                         const ratio = wasmFpsValue / jsFpsValue;
-                        speedupRatio.textContent = `WebAssembly is ${ratio.toFixed(1)}x faster than JavaScript`;
                         
                         // Calculate simulation time speedup
                         const jsSimTimeValue = parseFloat(jsSimTime.textContent);
